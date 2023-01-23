@@ -6,6 +6,8 @@
 # Task: calculate the "consensus mutation profile" where all mutations are above a certain frequency cutoff (e.g. 75%)
 # Output: Consensus mutation profile 
 
+require 'bio'
+
 freq_cutoff = 0.50
 
 covsonar_tsv = File.open(ARGV[0],'r')
@@ -59,3 +61,46 @@ dna_profile = nt_mutations_filtered.keys.join(' ')
 aa_profile = aa_changes_filtered.keys.join(' ')
 output << "CONSENSUS-PROFILE\tCONSENSUS-PROFILE\t\tmerge-profiles.rb\t\t\t\t\t\t\t\t\t\t\t\t\t#{lineage}\t\t\t#{dna_profile}\t#{aa_profile}\t\n"
 output.close
+
+
+# read in reference genome and replace INDELs and substitutions - experimental feature bc/ covsonar will better do that...
+consensus_seq = ''
+deletions_h = {}
+Bio::FastaFormat.open('NC_045512.2.fasta').each do |entry|
+    ref_seq = entry.seq
+    ref_seq_a = ref_seq.split('')
+    nt_mutations_filtered.each do |nt, position|
+        if nt.start_with?('del:')
+            # deletion, e.g. "del:29734:26"
+            ref_pos = nt.split(':')[1].to_i
+            del_length = nt.split(':')[2].to_i
+            deletions_h[ref_pos] = del_length
+        else
+            # substitution or insertion
+            ref_pos = nt.scan(/\d+/).first
+            ref_nt = nt.split(ref_pos)[0]
+            alternative_nt = nt.split(ref_pos)[1]
+            #puts "#{ref_nt}\t#{ref_pos}\t#{alternative_nt}"
+            ref_pos = ref_pos.to_i
+            if ref_seq_a[ref_pos-1] == ref_nt
+                ref_seq_a[ref_pos-1] = alternative_nt
+            else
+                abort 'STOP! This should not happen. We check if the correct reference nucleotide is replaced at the extracted position. Please debug...'
+            end
+        end
+    end
+    # now finally also remove the DELETIONS
+    deletions_a = []
+    deletions_h.each do |del_pos, del_length|
+        #a1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+        #a2 = [2..4, 8..11, 16..17]
+        #a1 - a2.flat_map(&:to_a)
+        # replace all deletion ranges simultaneously to avoid index shifting problems
+        deletions_a.push(del_pos.to_i..del_pos.to_i+del_length)
+    end
+    ref_seq_a_with_deletions = ref_seq_a - deletions_a.flat_map(&:to_a)
+    
+    consensus_seq = ref_seq_a_with_deletions.join('')
+end
+
+puts consensus_seq
