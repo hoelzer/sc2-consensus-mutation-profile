@@ -22,6 +22,6 @@ nextflow pull replikation/poreCov
 nextflow run replikation/poreCov -r 1.7.2 -profile local,docker --fasta covsonar.XBB.1.5.gisaid.consensus.fasta -w work --output porecov-results --update
 ```
 
-In this example, xxx XBB.1.5 mutation profiles were obtained from the GISAID covsonar database and using a mutation frequency cutoff of 75% resulted in the following consensus (poreCov analysis):
+In this example, 9,194 XBB.1.5 mutation profiles were obtained from the GISAID covsonar database and, using a mutation frequency cutoff of 75%, resulted in the following consensus (poreCov analysis):
 
 ![](imgs/XBB.1.5.example.png)
