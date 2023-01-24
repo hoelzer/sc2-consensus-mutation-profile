@@ -8,7 +8,7 @@
 
 require 'bio'
 
-freq_cutoff = 0.50
+freq_cutoff = 0.75
 
 covsonar_tsv = File.open(ARGV[0],'r')
 
@@ -63,7 +63,7 @@ output << "CONSENSUS-PROFILE\tCONSENSUS-PROFILE\t\tmerge-profiles.rb\t\t\t\t\t\t
 output.close
 
 
-# read in reference genome and replace INDELs and substitutions - experimental feature bc/ covsonar will better do that...
+# read in reference genome and replace INDELs and substitutions - experimental feature bc/ covsonar will maybe better do that...
 consensus_seq = ''
 deletions_h = {}
 Bio::FastaFormat.open('NC_045512.2.fasta').each do |entry|
@@ -74,7 +74,13 @@ Bio::FastaFormat.open('NC_045512.2.fasta').each do |entry|
             # deletion, e.g. "del:29734:26"
             ref_pos = nt.split(':')[1].to_i
             del_length = nt.split(':')[2].to_i
-            deletions_h[ref_pos] = del_length
+            # iterate over the positions that should be deleted and mask them
+            # delete them later to have no index problems
+            ref_pos = ref_pos - 1 
+            del_length.times do |i|
+                ref_seq_a[ref_pos+i] = '?'
+            end
+            #deletions_h[ref_pos] = del_length
         else
             # substitution or insertion
             ref_pos = nt.scan(/\d+/).first
@@ -90,17 +96,17 @@ Bio::FastaFormat.open('NC_045512.2.fasta').each do |entry|
         end
     end
     # now finally also remove the DELETIONS
-    deletions_a = []
-    deletions_h.each do |del_pos, del_length|
-        #a1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-        #a2 = [2..4, 8..11, 16..17]
-        #a1 - a2.flat_map(&:to_a)
-        # replace all deletion ranges simultaneously to avoid index shifting problems
-        deletions_a.push(del_pos.to_i..del_pos.to_i+del_length)
-    end
-    ref_seq_a_with_deletions = ref_seq_a - deletions_a.flat_map(&:to_a)
-    
-    consensus_seq = ref_seq_a_with_deletions.join('')
+    consensus_seq = ref_seq_a.join('').gsub('?','')
+#    deletions_a = []
+#    deletions_h.each do |del_pos, del_length|
+#        #a1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+#        #a2 = [2..4, 8..11, 16..17]
+#        #a1 - a2.flat_map(&:to_a)
+#        # replace all deletion ranges simultaneously to avoid index shifting problems
+#        deletions_a.push(del_pos.to_i..del_pos.to_i+del_length)
+#    end
+#    ref_seq_a_with_deletions = ref_seq_a - deletions_a.flat_map(&:to_a)    
+#    consensus_seq = ref_seq_a_with_deletions.join('')
 end
 
 puts consensus_seq
