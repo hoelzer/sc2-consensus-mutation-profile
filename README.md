@@ -25,3 +25,7 @@ nextflow run replikation/poreCov -r 1.7.2 -profile local,docker --fasta covsonar
 In this example, 9,194 XBB.1.5 mutation profiles were obtained from the GISAID covsonar database and, using a mutation frequency cutoff of 75%, resulted in the following consensus (poreCov analysis):
 
 ![](imgs/XBB.1.5.example.png)
+
+Here is another example, using 1,194,362 B.1.1.7 (VOC Alpha) mutation profiles from a covsonar GISAID database as input. The resulting consensus:
+
+![](imgs/B.1.1.7.example.png)

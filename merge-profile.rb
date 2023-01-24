@@ -102,5 +102,3 @@ end
 output = File.open(ARGV[0].sub('.tsv','.consensus.fasta'),'w')
 output << ">#{lineage}-Consensus\n#{consensus_seq.chomp}\n"
 output.close
-
-puts aa_changes_filtered
