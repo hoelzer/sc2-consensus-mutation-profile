@@ -13,6 +13,7 @@ freq_cutoff = 0.75
 covsonar_tsv = File.open(ARGV[0],'r')
 
 hits = 0
+lineage = ''
 nt_mutations = {}
 aa_changes = {}
 covsonar_tsv.each do |line|
@@ -35,6 +36,8 @@ covsonar_tsv.each do |line|
             aa_changes[aa_change] = 1
         end
     end
+    # get lineage
+    lineage = s[17].chomp.strip if lineage == ''
 end
 covsonar_tsv.close
 
@@ -53,10 +56,9 @@ aa_changes.each do |aa_change, count|
 end
 
 # write out again a covsonar-styled file
-output = File.open(ARGV[0].sub('.tsv','.consensus-profile.tsv'),'w')
+output = File.open(ARGV[0].sub('.tsv','.consensus.tsv'),'w')
 output << %w(accession	description	lab	source	collection	technology	platform	chemistry	material	ct	software	software_version	gisaid	ena	zip	date	submission_date	lineage	seqhash	dna_profile	aa_profile	fs_profile).join("\t")
 output << "\n"
-lineage = ''
 dna_profile = nt_mutations_filtered.keys.join(' ')
 aa_profile = aa_changes_filtered.keys.join(' ')
 output << "CONSENSUS-PROFILE\tCONSENSUS-PROFILE\t\tmerge-profiles.rb\t\t\t\t\t\t\t\t\t\t\t\t\t#{lineage}\t\t\t#{dna_profile}\t#{aa_profile}\t\n"
@@ -65,7 +67,6 @@ output.close
 
 # read in reference genome and replace INDELs and substitutions - experimental feature bc/ covsonar will maybe better do that...
 consensus_seq = ''
-deletions_h = {}
 Bio::FastaFormat.open('NC_045512.2.fasta').each do |entry|
     ref_seq = entry.seq
     ref_seq_a = ref_seq.split('')
@@ -80,7 +81,6 @@ Bio::FastaFormat.open('NC_045512.2.fasta').each do |entry|
             del_length.times do |i|
                 ref_seq_a[ref_pos+i] = '?'
             end
-            #deletions_h[ref_pos] = del_length
         else
             # substitution or insertion
             ref_pos = nt.scan(/\d+/).first
@@ -95,18 +95,12 @@ Bio::FastaFormat.open('NC_045512.2.fasta').each do |entry|
             end
         end
     end
-    # now finally also remove the DELETIONS
+    # now finally create the consensus and also remove the DELETIONS
     consensus_seq = ref_seq_a.join('').gsub('?','')
-#    deletions_a = []
-#    deletions_h.each do |del_pos, del_length|
-#        #a1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-#        #a2 = [2..4, 8..11, 16..17]
-#        #a1 - a2.flat_map(&:to_a)
-#        # replace all deletion ranges simultaneously to avoid index shifting problems
-#        deletions_a.push(del_pos.to_i..del_pos.to_i+del_length)
-#    end
-#    ref_seq_a_with_deletions = ref_seq_a - deletions_a.flat_map(&:to_a)    
-#    consensus_seq = ref_seq_a_with_deletions.join('')
 end
 
-puts consensus_seq
+output = File.open(ARGV[0].sub('.tsv','.consensus.fasta'),'w')
+output << ">#{lineage}-Consensus\n#{consensus_seq.chomp}\n"
+output.close
+
+puts aa_changes_filtered
