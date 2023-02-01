@@ -1,12 +1,28 @@
 # SARS-CoV-2 consensus creation
 
+**Disclaimer:** This script is not yet fully tested. Please use with caution and report [issues](https://github.com/hoelzer/sc2-consensus-mutation-profile/issues).
+
 ## What's happening here?
 
 The international database [GISAID](https://gisaid.org/) counts 14,7 million SARS-CoV-2 genome sequences that are assigned to ~2,800 [lineages](https://cov-lineages.org/) (2023-01-24). For many applications, only representative genome sequences of selected lineages are needed. For example, to design new primers for tiled amplicon sequencing panels or for the selection of mutations for variant-specific PCRs. However, calculating a multiple sequence alignment from which a representative consensus genome sequence can be derived can be challenging due to the high number of sequences per lineage. In addition, sequencing and genome reconstruction errors lead to ambiguous base stretches or frame shifts, complicating the alignment. 
 
-Here, we use a different approach to reconstruct a representative genome sequence per SARS-CoV-2 lineage. We derive pre-calculated mutation profiles per lineage from [covsonar](https://github.com/rki-mf1/covsonar) and calculate the frequency of each mutation. Then, we filter the mutations using a frequency cutoff (efault: 75%) and include the detected substitutions, insertions, and deletions into a reference genome sequence (default: NC_045512.2). 
+Here, we use a different approach to reconstruct a representative genome sequence per SARS-CoV-2 lineage. We derive pre-calculated mutation profiles per lineage from [covsonar](https://github.com/rki-mf1/covsonar) and calculate the frequency of each mutation. Then, we filter the mutations using a frequency cutoff (default: 75%) and include the detected substitutions, insertions, and deletions into a reference genome sequence (default: NC_045512.2). 
 
 By that, we overcome limitations of a multiple sequence alignment and remove sequencing and genome reconsturction artifacts by focusing on the most representative changes for each annotated lineage. 
+
+## Dependencies
+
+You need a `ruby` installation and the `bioruby` gem. Easiest way:
+
+```bash
+conda create -n bioruby -c conda-forge ruby
+conda activate bioruby
+gem install bio
+```
+
+or you can also directly try `gem install bio` because you usually have a `ruby` installed. 
+
+The input for the script needs to be generated via [covsonar](https://github.com/rki-mf1/covsonar).
 
 ## Run example 
 
