@@ -41,28 +41,61 @@ covsonar_tsv.each do |line|
 end
 covsonar_tsv.close
 
+# frequencies
+nt_mutations_freq = {}
+aa_changes_freq = {}
+
 # filter based on frequency
 nt_mutations_filtered = {}
 aa_changes_filtered = {}
 
 nt_mutations.each do |nt_mutation, count|
     freq = count.to_f / hits
+    nt_mutations_freq[nt_mutation] = freq.round(3)
     nt_mutations_filtered[nt_mutation] = freq.round(3) if freq >= freq_cutoff
 end
 
 aa_changes.each do |aa_change, count|
     freq = count.to_f / hits
+    aa_changes_freq[aa_change] = freq.round(3)
     aa_changes_filtered[aa_change] = freq.round(3) if freq >= freq_cutoff
 end
 
-# write out again a covsonar-styled file
-output = File.open(ARGV[0].sub('.tsv','.consensus.tsv'),'w')
-output << %w(accession	description	lab	source	collection	technology	platform	chemistry	material	ct	software	software_version	gisaid	ena	zip	date	submission_date	lineage	seqhash	dna_profile	aa_profile	fs_profile).join("\t")
-output << "\n"
-dna_profile = nt_mutations_filtered.keys.join(' ')
-aa_profile = aa_changes_filtered.keys.join(' ')
-output << "CONSENSUS-PROFILE\tCONSENSUS-PROFILE\t\tmerge-profiles.rb\t\t\t\t\t\t\t\t\t\t\t\t\t#{lineage}\t\t\t#{dna_profile}\t#{aa_profile}\t\n"
+# write out tables with all calculated frequencies, unfiltered
+output = File.open(ARGV[0].sub('.tsv','.frequencies.nt.tsv'),'w')
+output << "nucleotide-mutation\tfrequency\n"
+sorted = []
+nt_mutations_freq.keys.sort_by { |mut| nt_mutations_freq[mut] }.each do |mut|
+    freq = nt_mutations_freq[mut]
+    sorted.push("#{mut}\t#{freq}\n")
+end
+sorted.reverse!
+sorted.each do |entry|
+    output << "#{entry}" 
+end
 output.close
+
+output = File.open(ARGV[0].sub('.tsv','.frequencies.aa.tsv'),'w')
+output << "aminoacid-change\tfrequency\n"
+sorted = []
+aa_changes_freq.keys.sort_by { |mut| aa_changes_freq[mut] }.each do |mut|
+    freq = aa_changes_freq[mut]
+    sorted.push("#{mut}\t#{freq}\n")
+end
+sorted.reverse!
+sorted.each do |entry|
+    output << "#{entry}" 
+end
+output.close
+
+# write out again a covsonar-styled file NOT NEEDED ATM
+#output = File.open(ARGV[0].sub('.tsv','.consensus.tsv'),'w')
+#output << %w(accession	description	lab	source	collection	technology	platform	chemistry	material	ct	software	software_version	gisaid	ena	zip	date	submission_date	lineage	seqhash	dna_profile	aa_profile	fs_profile).join("\t")
+#output << "\n"
+#dna_profile = nt_mutations_filtered.keys.join(' ')
+#aa_profile = aa_changes_filtered.keys.join(' ')
+#output << "CONSENSUS-PROFILE\tCONSENSUS-PROFILE\t\tmerge-profiles.rb\t\t\t\t\t\t\t\t\t\t\t\t\t#{lineage}\t\t\t#{dna_profile}\t#{aa_profile}\t\n"
+#output.close
 
 
 # read in reference genome and replace INDELs and substitutions - experimental feature bc/ covsonar will maybe better do that...
